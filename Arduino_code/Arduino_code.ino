@@ -48,7 +48,7 @@ void setup(void) {
   //initialize the variables we're linked to
   sensors.requestTemperatures(); 
   Input = sensors.getTempCByIndex(0);
-  Setpoint = 50;
+  Setpoint = 60;
 
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
