@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <PID_v1.h>
 #include <AccelStepper.h>
+#include <EEPROM.h>
 
 #define motorPin1  2
 #define motorPin2  3
@@ -11,6 +12,8 @@
 #define FULLSTEP 4
 
 AccelStepper stepper(FULLSTEP, motorPin1, motorPin3, motorPin2, motorPin4);
+int eeAddress = 0;   // Address of the stepper position in EEPROM
+long startPos;        // Initial position of the stepper motor
 
 const double maxArea = 1;
 
@@ -43,13 +46,24 @@ struct result {   // Structure declaration
 void setup() {
     stepper.setMaxSpeed(1000.0); // Maximum speed of the stepper
     stepper.setAcceleration(500.0); // Acceleration for smoother motion
+
     Serial.begin(9600);
+    while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+    }
+
+    // Read the initial position of the stepper motor from EEPROM
+    EEPROM.get(eeAddress, startPos);
+    stepper.setCurrentPosition(startPos);
+    Serial.print("Read long from EEPROM: ");
+    Serial.println(startPos); 
+
     sensorsA.begin();
     sensorsB.begin();
     Serial.println("tempC1,tempC2,avg,area,angle,currentTime");
 
     // Initialize PID
-    Input = 0;  // Initial temperature input
+    Input = 20;  // Initial temperature input
     Setpoint = 50;  // Desired temperature
     myPID.SetMode(AUTOMATIC);
     myPID.SetOutputLimits(0, maxArea); // Match PID output to area limits
@@ -108,6 +122,13 @@ bool moveToAngle(double angleDeg){
 
   stepper.moveTo(positions);
   while (stepper.run());
+
+  // Save the current position of the stepper motor in EEPROM
+  EEPROM.put(eeAddress, stepper.currentPosition());
+
+  EEPROM.get(eeAddress, startPos);
+  Serial.print("Set current position to eeprom and read long from EEPROM: ");
+  Serial.println(startPos); 
 
   return true;
 }
